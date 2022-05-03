@@ -1,19 +1,27 @@
-import requests
-from bs4 import BeautifulSoup
+import json
 import logging
 import re
+from os import makedirs
+from os.path import exists
 from urllib.parse import urljoin
+
+import requests
+from fake_useragent import UserAgent
+from pyquery import PyQuery as pq
 
 logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s: %(message)s')
 BASE_URL = 'https://ssr1.scrape.center'
 TOTAL_PAGE = 10
 
+ua = UserAgent()
+headers = {'User-Agent': ua.random}
+
 
 def scrape_page(url):
     logging.info('scraping %s...', url)
     try:
-        response = requests.get(url)
+        response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return response.text
         logging.error("get inbalid status code %s while scraping %s",
@@ -37,13 +45,53 @@ def parse_index(html):
         logging.info('get detail url %s', detail_url)
         yield detail_url
 
-def main():
-    for page in range(1,TOTAL_PAGE +1):
-        index_html=scrape_index(page)
-        detail_urls=parse_index(index_html)
-        logging.info('detail url %s',list(detail_urls))
 
-        
+def scrape_detail(url):
+    return scrape_page(url)
+
+
+def parse_detail(html):
+    doc = pq(html)
+    cover = doc(".cover")('src') if doc(".cover")('src') else None
+    name = doc(".m-b-sm").text() if doc(".m-b-sm").text() else None
+    categories = doc(".categories button span").text() if doc(".categories button span").text() else None
+    published_pattern = re.compile('(\d{4}-\d{2}-\d{2})\s?上映')
+    published = re.search(published_pattern, html).group(1) if re.search(published_pattern, html) else None
+    drama = doc('.drama p').text() if doc('.drama p') else None
+    score = doc('.score').text() if doc(".score").text() else None
+    return {
+        "cover": cover,
+        "name": name,
+        "categories": categories,
+        "published": published,
+        "drama": drama,
+        "score": score
+    }
+
+
+RESULTS_DIR = 'results'
+exists(RESULTS_DIR) or makedirs((RESULTS_DIR))
+
+
+def save_data(data):
+    name = data.get("name")
+    data_path = f"{RESULTS_DIR}/{name}.json"
+    json.dump(data, open(data_path, "w", encoding='utf-8'),
+              ensure_ascii=False, indent=2)
+
+
+def main():
+    for page in range(1, TOTAL_PAGE + 1):
+        index_html = scrape_index(page)
+        detail_urls = parse_index(index_html)
+        for detail_url in detail_urls:
+            detail_html = scrape_detail(detail_url)
+            data = parse_detail(detail_html)
+            logging.info('get detail data %s', data)
+            logging.info("saving data to json file")
+            save_data(data)
+            logging.info("data saved succeddfully")
+
 
 if __name__ == '__main__':
     main()
