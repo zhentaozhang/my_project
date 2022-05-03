@@ -1,6 +1,8 @@
 import json
 import logging
+import multiprocessing
 import re
+import time
 from os import makedirs
 from os.path import exists
 from urllib.parse import urljoin
@@ -80,18 +82,24 @@ def save_data(data):
               ensure_ascii=False, indent=2)
 
 
-def main():
-    for page in range(1, TOTAL_PAGE + 1):
-        index_html = scrape_index(page)
-        detail_urls = parse_index(index_html)
-        for detail_url in detail_urls:
-            detail_html = scrape_detail(detail_url)
-            data = parse_detail(detail_html)
-            logging.info('get detail data %s', data)
-            logging.info("saving data to json file")
-            save_data(data)
-            logging.info("data saved succeddfully")
+def main(page):
+    index_html = scrape_index(page)
+    detail_urls = parse_index(index_html)
+    for detail_url in detail_urls:
+        detail_html = scrape_detail(detail_url)
+        data = parse_detail(detail_html)
+        logging.info('get detail data %s', data)
+        logging.info("saving data to json file")
+        save_data(data)
+        logging.info("data saved successfully")
 
 
 if __name__ == '__main__':
-    main()
+    T1=time.time()
+    pool = multiprocessing.Pool()
+    pages = range(1, TOTAL_PAGE + 1)
+    pool.map(main, pages)
+    pool.close()
+    pool.join()
+    T2=time.time()
+    print("程序运行时间:%s秒" % (T2-T1))
