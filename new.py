@@ -1,12 +1,11 @@
-import json
+# -*- coding:utf-8 -*-
+
 import logging
 import multiprocessing
 import re
 import time
-from os import makedirs
-from os.path import exists
 from urllib.parse import urljoin
-
+import pymysql
 import requests
 from fake_useragent import UserAgent
 from pyquery import PyQuery as pq
@@ -26,7 +25,7 @@ def scrape_page(url):
         response = requests.get(url, headers=headers)
         if response.status_code == 200:
             return response.text
-        logging.error("get inbalid status code %s while scraping %s",
+        logging.error("get invalid status code %s while scraping %s",
                       response.status_code, url)
     except requests.RequestException:
         logging.error('error occurred while scraping %s', url, exc_info=True)
@@ -54,7 +53,7 @@ def scrape_detail(url):
 
 def parse_detail(html):
     doc = pq(html)
-    cover = doc(".cover")('src') if doc(".cover")('src') else None
+    cover = doc('.cover').attr('src') if doc('.cover').attr('src') else None
     name = doc(".m-b-sm").text() if doc(".m-b-sm").text() else None
     categories = doc(".categories button span").text() if doc(".categories button span").text() else None
     published_pattern = re.compile('(\d{4}-\d{2}-\d{2})\s?上映')
@@ -71,15 +70,21 @@ def parse_detail(html):
     }
 
 
-RESULTS_DIR = 'results'
-exists(RESULTS_DIR) or makedirs((RESULTS_DIR))
-
-
 def save_data(data):
-    name = data.get("name")
-    data_path = f"{RESULTS_DIR}/{name}.json"
-    json.dump(data, open(data_path, "w", encoding='utf-8'),
-              ensure_ascii=False, indent=2)
+    db = pymysql.connect(host='localhost', user='root', password='123456', port=3306, db="spider")
+    cursor = db.cursor()
+    values = ','.join(['%s'] * len(data))
+    # sql = 'INSERT INTO {table}({keys}) VALUES ({values})'.format(table=table, keys=keys, values=values)
+    sql = 'INSERT INTO onespider(cover, name, categories, published, drama, score) VALUES ({values})'.format(
+        values=values)
+    try:
+        if cursor.execute(sql, tuple(data.values())):
+            print("Successful")
+            db.commit()
+    except:
+        print("Failed")
+        db.rollback()
+    db.close()
 
 
 def main(page):
@@ -95,11 +100,11 @@ def main(page):
 
 
 if __name__ == '__main__':
-    T1=time.time()
+    T1 = time.time()
     pool = multiprocessing.Pool()
     pages = range(1, TOTAL_PAGE + 1)
     pool.map(main, pages)
     pool.close()
     pool.join()
-    T2=time.time()
-    print("程序运行时间:%s秒" % (T2-T1))
+    T2 = time.time()
+    print("程序运行时间:%s秒" % (T2 - T1))
