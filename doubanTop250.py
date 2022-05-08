@@ -85,8 +85,6 @@ def point_url_detail(point_html):
 def save(data):
     db = pymysql.connect(host='localhost', user='root', password='123456', port=3306, db='spider')
     cursor = db.cursor()
-    table = 'top250'
-    keys = ','.join(data.keys())
     values = ','.join(['%s'] * len(data))
     sql = 'INSERT INTO top250(title, actor, short_text,runtime, type,star) VALUES ({values})'.format(values=values)
     try:
