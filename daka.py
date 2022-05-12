@@ -12,14 +12,14 @@ def open_url(username, password):
     # prefs = {"profile.managed_default_content_settings.images": 2}  # 设置无图模式
     # options.add_experimental_option("prefs", prefs)
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    # options.add_argument('--headless')
+    options.add_argument('--headless')  # 设置无头模式
     browser = webdriver.Chrome(options=options)
     browser.implicitly_wait(10)
-    url = "https://webvpn.chzu.edu.cn/https/webvpn6d79302e63687a752e6564752e636e/link?id=aa13361944680028&url=https%3A%2F%2Fyq.weishao.com.cn%2Fcheck%2Fquestionnaire "
+    url = "https://webvpn.chzu.edu.cn/https/webvpn6d79302e63687a752e6564752e636e/link?id=aa13361944680028&url=https%3A%2F%2Fyq.weishao.com.cn%2Fcheck%2Fquestionnaire"
     browser.get(url)
     print("starting...")
     try:
-        iframe = browser.find_element(By.TAG_NAME, 'iframe')
+        iframe = browser.find_element(By.TAG_NAME, 'iframe')  # 获取Url的子页面
         browser.switch_to.frame(iframe)
         select = Select(browser.find_element(By.ID, 'schoolcode'))
         select.select_by_value(value='chzu')
@@ -28,25 +28,31 @@ def open_url(username, password):
         time.sleep(0.2)
         browser.find_element(By.ID, 'password').send_keys(password)
         time.sleep(0.2)
-        browser.find_element(By.ID, 'btnpc').click()
+        browser.find_element(By.ID, 'btnpc').click()  # 点击登录按钮
         time.sleep(0.2)
-        click_html = browser.page_source
+        click_html = browser.page_source  # 获取点击按钮后跳转页面的HTML
         doc = pq(click_html)
         if doc('.statusCode').text() == "状态码：500":
+            # 如果登陆失败，页面显示状态码：500
+            # 通过获取HTML页面内容获取元素比使用find_element性能更高
             print("*" * 47)
             print(f"{username}----账号或密码错误！也或许服务器错误！")
             print("*" * 47)
         else:
             browser.find_element(By.CLASS_NAME, 'p1').click()
+            # 正常登录
             time.sleep(0.5)
             doc_1 = pq(browser.page_source)
+            # 与上行代码类似
             if doc_1('.public_modal_tax').text() == "您在周期内已填写过此问卷, 1天后可再次填写，请前往\"我的-我填写的\"页面查看详情":
+                # 如果今天已经完成打卡
                 print("!" * 47)
                 print(f"{username}----今天已经完成打卡！！请不要重复打开此页面！！")
                 print("!" * 47)
             else:
                 try:
                     browser.find_elements(By.CLASS_NAME, 'am-modal-button')[1].click()
+                    # 正常情况，点击元素进行打卡
                     time.sleep(0.2)
                     button = browser.find_elements(By.CLASS_NAME, 'btn_xs')[1]
                     ActionChains(browser).move_to_element(button).click(button).perform()
@@ -56,9 +62,9 @@ def open_url(username, password):
                 except NoSuchElementException:
                     print('Hello! No Element')
                 except IndexError:
-                    print('Hello! No View')
+                    print('Hello! IndexError')
                 except WebDriverException:
-                    print("Hello! Abnormal Condition")
+                    print("Hello! WebDriverException")
     except TimeoutException:
         print('Time Out')
     finally:
@@ -68,10 +74,13 @@ def open_url(username, password):
 
 def main():
     dict_user = {
-        '2020210183': 'Zzt2002.',
-        "2020212056": "rui1219R.",
-        "2020212158": "1274494860@Abc",
-        "2020210160": "Taizihao...1025"
+        '2020210183': 'Zzt2002.',  # ZZT
+        "2020212056": "rui1219R.",  # LR
+        "2020212158": "1274494860@Abc",  # HL
+        "2020210160": "Taizihao...1025",  # TZH
+        "2020210152": "Zxcvbnm123.!",  # MX
+        "2020210442": "Zhx2022.",  # ZHX
+        "2020210186": "19911005@Xz" #ZJL
     }
     for key, value in dict_user.items():
         open_url(key, value)
