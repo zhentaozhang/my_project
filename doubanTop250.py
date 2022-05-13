@@ -1,12 +1,12 @@
 import logging
-import time
+import multiprocessing
 import re
+import time
+
 import pymysql
 import requests
 from fake_useragent import UserAgent
 from pyquery import PyQuery as pq
-import multiprocessing
-from bs4 import BeautifulSoup
 
 ua = UserAgent()
 headers = {'User-Agent': ua.random}

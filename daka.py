@@ -1,10 +1,13 @@
+import time
+from multiprocessing import Pool
+
+from pyquery import PyQuery as pq
 from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, NoSuchElementException
+from selenium.webdriver import ActionChains
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import Select
-from selenium.webdriver import ActionChains
-from selenium.common.exceptions import TimeoutException, NoSuchElementException, WebDriverException
-from pyquery import PyQuery as pq
-import time
 
 
 def open_url(username, password):
@@ -12,8 +15,9 @@ def open_url(username, password):
     # prefs = {"profile.managed_default_content_settings.images": 2}  # 设置无图模式
     # options.add_experimental_option("prefs", prefs)
     options.add_experimental_option('excludeSwitches', ['enable-logging'])
-    options.add_argument('--headless')  # 设置无头模式
-    browser = webdriver.Chrome(options=options)
+    # options.add_argument('--headless')  # 设置无头模式
+    s = Service(executable_path=r"D:\日常软件\pycharm\pythonProject\venv\Scripts\chromedriver.exe")
+    browser = webdriver.Chrome(service=s, options=options)
     browser.implicitly_wait(10)
     url = "https://webvpn.chzu.edu.cn/https/webvpn6d79302e63687a752e6564752e636e/link?id=aa13361944680028&url=https%3A%2F%2Fyq.weishao.com.cn%2Fcheck%2Fquestionnaire"
     browser.get(url)
@@ -21,20 +25,20 @@ def open_url(username, password):
     try:
         iframe = browser.find_element(By.TAG_NAME, 'iframe')  # 获取Url的子页面
         browser.switch_to.frame(iframe)
-        select = Select(browser.find_element(By.ID, 'schoolcode'))
+        select = Select(browser.find_element(By.ID, "schoolcode"))
         select.select_by_value(value='chzu')
-        time.sleep(0.2)
+        time.sleep(0.5)
         browser.find_element(By.ID, 'username').send_keys(username)
-        time.sleep(0.2)
+        time.sleep(0.5)
         browser.find_element(By.ID, 'password').send_keys(password)
-        time.sleep(0.2)
+        time.sleep(0.5)
         browser.find_element(By.ID, 'btnpc').click()  # 点击登录按钮
-        time.sleep(0.2)
+        time.sleep(0.5)
         click_html = browser.page_source  # 获取点击按钮后跳转页面的HTML
         doc = pq(click_html)
         if doc('.statusCode').text() == "状态码：500":
             # 如果登陆失败，页面显示状态码：500
-            # 通过获取HTML页面内容获取元素比使用find_element性能更高
+            # 通过获取HTML页面内容获取元素比使用.find_element性能更高
             print("*" * 47)
             print(f"{username}----账号或密码错误！也或许服务器错误！")
             print("*" * 47)
@@ -61,10 +65,10 @@ def open_url(username, password):
                     print("+" * 47)
                 except NoSuchElementException:
                     print('Hello! No Element')
-                except IndexError:
-                    print('Hello! IndexError')
-                except WebDriverException:
-                    print("Hello! WebDriverException")
+                # except IndexError:
+                #     print('Hello! IndexError')
+                # except WebDriverException:
+                #     print("Hello! WebDriverException")
     except TimeoutException:
         print('Time Out')
     finally:
@@ -72,7 +76,7 @@ def open_url(username, password):
         browser.close()
 
 
-def main():
+if __name__ == '__main__':
     dict_user = {
         '2020210183': 'Zzt2002.',  # ZZT
         "2020212056": "rui1219R.",  # LR
@@ -80,25 +84,11 @@ def main():
         "2020210160": "Taizihao...1025",  # TZH
         "2020210152": "Zxcvbnm123.!",  # MX
         "2020210442": "Zhx2022.",  # ZHX
-        "2020210186": "19911005@Xz" #ZJL
+        "2020210186": "19911005@Xz"  # ZJL
     }
-    for key, value in dict_user.items():
-        open_url(key, value)
-        print('ending...')
-    # 让用户每次输入学号和密码(繁琐)
-    # polling_active = True
-    # while polling_active:
-    #     print("添加打卡人员")
-    #     username = input("username: ")
-    #     password = input("password: ")
-    #     dict_user.update({username: password})
-    #     repeat = input("是否继续输入:(yes/no)")
-    #     if repeat == "no":
-    #         polling_active = False
-
-
-if __name__ == '__main__':
+    pool = Pool()
     t1 = time.time()
-    main()
+    item = [i for i in dict_user.items()]
+    pool.starmap(open_url, item)
     t2 = time.time()
     print(t2 - t1)
