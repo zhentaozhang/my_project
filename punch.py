@@ -69,9 +69,7 @@ def open_url(username, password):
 
 def main():
     dict_user = {
-        '2020210183': 'Zzt2002.',
-        "2020212056": "rui1219R.",
-        "2020212158": "1274494860@Abc"
+
     }
     # 让用户每次输入学号和密码(繁琐)
     # polling_active = True
