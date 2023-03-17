@@ -78,13 +78,7 @@ def open_url(username, password):
 
 if __name__ == '__main__':
     dict_user = {
-        '2020210183': 'Zzt2002.',  # ZZT
-        "2020212056": "rui1219R.",  # LR
-        "2020212158": "1274494860@Abc",  # HL
-        "2020210160": "Taizihao...1025",  # TZH
-        "2020210152": "Zxcvbnm123.!",  # MX
-        "2020210442": "Zhx2022.",  # ZHX
-        "2020210186": "19911005@Xz"  # ZJL
+     
     }
     pool = Pool()
     t1 = time.time()
